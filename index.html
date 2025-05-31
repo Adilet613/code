@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freelance Platform</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.22.9/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+    .chat-message {
+      font-family: 'Poppins', sans-serif;
+    }
+    .chat-bubble {
+      max-width: 70%;
+      padding: 10px 15px;
+      margin: 5px 10px;
+      border-radius: 15px;
+      position: relative;
+    }
+    .chat-bubble.client {
+      background-color: #4f46e5;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 5px;
+    }
+    .chat-bubble.freelancer {
+      background-color: #e5e7eb;
+      color: black;
+      margin-right: auto;
+      border-bottom-left-radius: 5px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+  <script type="text/babel">
+    const categories = [
+      'Программисты (веб, мобильные, геймдев)',
+      'Дизайнеры (графика, UI/UX, анимация)',
+      'Копирайтеры',
+      '3D-моделлеры',
+      'Видео-монтажёры'
+    ];
+
+    function App() {
+      const [user, setUser] = React.useState(null);
+      const [isClient, setIsClient] = React.useState(true);
+      const [orders, setOrders] = React.useState([]);
+      const [selectedCategories, setSelectedCategories] = React.useState([]);
+      const [currentOrder, setCurrentOrder] = React.useState(null);
+      const [chatMessages, setChatMessages] = React.useState([]);
+      const [newMessage, setNewMessage] = React.useState('');
+      const [balance, setBalance] = React.useState(0);
+      const [profileStats, setProfileStats] = React.useState({ completed: 0, reviews: [], achievements: [] });
+
+      const login = (username, role) => {
+        setUser({ username, role });
+        setIsClient(role === 'client');
+      };
+
+      const addOrder = (category, description, budget) => {
+        if (balance >= budget) {
+          const newOrder = {
+            id: orders.length + 1,
+            category,
+            description,
+            budget,
+            status: 'open',
+            client: user.username,
+            freelancer: null
+          };
+          setOrders([...orders, newOrder]);
+          setBalance(balance - budget);
+        } else {
+          alert('Недостаточно средств на балансе');
+        }
+      };
+
+      const takeOrder = (orderId) => {
+        setOrders(orders.map(order =>
+          order.id === orderId ? { ...order, freelancer: user.username, status: 'in-progress' } : order
+        ));
+      };
+
+      const completeOrder = (orderId) => {
+        setOrders(orders.map(order =>
+          order.id === orderId ? { ...order, status: 'completed' } : order
+        ));
+        setProfileStats({ ...profileStats, completed: profileStats.completed + 1 });
+        setBalance(balance + orders.find(o => o.id === orderId).budget);
+      };
+
+      const cancelOrder = (orderId) => {
+        const order = orders.find(o => o.id === orderId);
+        setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o));
+        if (isClient) setBalance(balance + order.budget);
+      };
+
+      const addFunds = (amount) => {
+        setBalance(balance + amount);
+      };
+
+      const withdrawFunds = (amount) => {
+        if (amount <= balance) {
+          setBalance(balance - amount);
+          alert(`Вывод ${amount} успешно выполнен`);
+        } else {
+          alert('Недостаточно средств для вывода');
+        }
+      };
+
+      const sendMessage = () => {
+        if (newMessage.trim() && currentOrder) {
+          setChatMessages([...chatMessages, {
+            sender: user.username,
+            text: newMessage,
+            role: isClient ? 'client' : 'freelancer'
+          }]);
+          setNewMessage('');
+        }
+      };
+
+      const LoginForm = () => {
+        const [username, setUsername] = React.useState('');
+        const [role, setRole] = React.useState('client');
+
+        return (
+          <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+            <h2 className="text-2xl font-bold mb-4">Вход</h2>
+            <input
+              type="text"
+              placeholder="Имя пользователя"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full p-2 mb-4 border rounded"
+            />
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full p-2 mb-4 border rounded"
+            >
+              <option value="client">Заказчик</option>
+              <option value="freelancer">Фрилансер</option>
+            </select>
+            <button
+              onClick={() => login(username, role)}
+              className="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"
+            >
+              Войти
+            </button>
+          </div>
+        );
+      };
+
+      const CategorySelector = () => (
+        <div className="max-w-md mx-auto mt-6 p-6 bg-white rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold mb-4">Выберите категории</h2>
+          {categories.map(cat => (
+            <div key={cat} className="mb-2">
+              <input
+                type="checkbox"
+                id={cat}
+                checked={selectedCategories.includes(cat)}
+                onChange={() => {
+                  setSelectedCategories(
+                    selectedCategories.includes(cat)
+                      ? selectedCategories.filter(c => c !== cat)
+                      : [...selectedCategories, cat]
+                  );
+                }}
+              />
+              <label htmlFor={cat} className="ml-2">{cat}</label>
+            </div>
+          ))}
+        </div>
+      );
+
+      const OrderForm = () => {
+        const [category, setCategory] = React.useState(categories[0]);
+        const [description, setDescription] = React.useState('');
+        const [budget, setBudget] = React.useState('');
+
+        return (
+          <div className="max-w-md mx-auto mt-6 p-6 bg-white rounded-lg shadow-lg">
+            <h2 className="text-xl font-bold mb-4">Создать заказ</h2>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full p-2 mb-4 border rounded"
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+            <textarea
+              placeholder="Описание заказа"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full p-2 mb-4 border rounded"
+            />
+            <input
+              type="number"
+              placeholder="Бюджет"
+              value={budget}
+              onChange={(e) => setBudget(e.target.value)}
+              className="w-full p-2 mb-4 border rounded"
+            />
+            <button
+              onClick={() => addOrder(category, description, parseFloat(budget))}
+              className="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"
+            >
+              Создать заказ
+            </button>
+          </div>
+        );
+      };
+
+      const OrderList = () => {
+        const filteredOrders = isClient
+          ? orders.filter(o => o.client === user.username)
+          : orders.filter(o => selectedCategories.includes(o.category) && o.status === 'open');
+
+        return (
+          <div className="max-w-2xl mx-auto mt-6">
+            <h2 className="text-xl font-bold mb-4">Заказы</h2>
+            {filteredOrders.map(order => (
+              <div key={order.id} className="p-4 mb-4 bg-white rounded-lg shadow">
+                <p><strong>Категория:</strong> {order.category}</p>
+                <p><strong>Описание:</strong> {order.description}</p>
+                <p><strong>Бюджет:</strong> {order.budget}</p>
+                <p><strong>Статус:</strong> {order.status}</p>
+                {isClient && order.status === 'open' && (
+                  <button
+                    onClick={() => cancelOrder(order.id)}
+                    className="mt-2 bg-red-600 text-white p-2 rounded hover:bg-red-700"
+                  >
+                    Отменить
+                  </button>
+                )}
+                {isClient && order.status === 'in-progress' && (
+                  <button
+                    onClick={() => completeOrder(order.id)}
+                    className="mt-2 bg-green-600 text-white p-2 rounded hover:bg-green-700"
+                  >
+                    Завершить
+                  </button>
+                )}
+                {!isClient && order.status === 'open' && (
+                  <button
+                    onClick={() => {
+                      takeOrder(order.id);
+                      setCurrentOrder(order);
+                    }}
+                    className="mt-2 bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"
+                  >
+                    Взять заказ
+                  </button>
+                )}
+                {(isClient || order.freelancer === user.username) && (
+                  <button
+                    onClick={() => setCurrentOrder(order)}
+                    className="mt-2 ml-2 bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+                  >
+                    Открыть чат
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      };
+
+      const Chat = () => (
+        <div className="max-w-md mx-auto mt-6 p-6 bg-white rounded-lg shadow-lg h-96 flex flex-col">
+          <h2 className="text-xl font-bold mb-4">Чат по заказу #{currentOrder?.id}</h2>
+          <div className="flex-1 overflow-y-auto">
+            {chatMessages.map((msg, index) => (
+              <div
+                key={index}
+                className={`chat-bubble ${msg.role} chat-message`}
+              >
+                <strong>{msg.sender}:</strong> {msg.text}
+              </div>
+            ))}
+          </div>
+          <div className="flex mt-4">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              className="flex-1 p-2 border rounded-l"
+              placeholder="Введите сообщение..."
+            />
+            <button
+              onClick={sendMessage}
+              className="bg-indigo-600 text-white p-2 rounded-r hover:bg-indigo-700"
+            >
+              Отправить
+            </button>
+          </div>
+        </div>
+      );
+
+      const BalanceManager = () => (
+        <div className="max-w-md mx-auto mt-6 p-6 bg-white rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold mb-4">Баланс: {balance} ₽</h2>
+          {isClient && (
+            <div>
+              <input
+                type="number"
+                placeholder="Сумма пополнения"
+                id="addFunds"
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <button
+                onClick={() => addFunds(parseFloat(document.getElementById('addFunds').value))}
+                className="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"
+              >
+                Пополнить
+              </button>
+            </div>
+          )}
+          {!isClient && (
+            <div>
+              <input
+                type="number"
+                placeholder="Сумма вывода"
+                id="withdrawFunds"
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <button
+                onClick={() => withdrawFunds(parseFloat(document.getElementById('withdrawFunds').value))}
+                className="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"
+              >
+                Вывести
+              </button>
+            </div>
+          )}
+        </div>
+      );
+
+      const Profile = () => (
+        <div className="max-w-md mx-auto mt-6 p-6 bg-white rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold mb-4">Профиль</h2>
+          <p><strong>Имя:</strong> {user.username}</p>
+          <p><strong>Роль:</strong> {isClient ? 'Заказчик' : 'Фрилансер'}</p>
+          {!isClient && (
+            <>
+              <p><strong>Категории:</strong> {selectedCategories.join(', ')}</p>
+              <p><strong>Выполнено заказов:</strong> {profileStats.completed}</p>
+              <p><strong>Достижения:</strong> {profileStats.achievements.length ? profileStats.achievements.join(', ') : 'Нет'}</p>
+            </>
+          )}
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen bg-gray-100">
+          {!user ? (
+            <LoginForm />
+          ) : (
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold">Платформа для фрилансеров</h1>
+                <button
+                  onClick={() => setUser(null)}
+                  className="bg-red-600 text-white p-2 rounded hover:bg-red-700"
+                >
+                  Выйти
+                </button>
+              </div>
+              {!isClient && <CategorySelector />}
+              {isClient && <OrderForm />}
+              <BalanceManager />
+              <OrderList />
+              {currentOrder && <Chat />}
+              <Profile />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
