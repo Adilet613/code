@@ -59,6 +59,23 @@ pre {
   border-left: 4px solid #60a5fa;
 }
 
+textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 1em;
+  padding: 1em;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-top: 0.5em;
+}
+
+.output-block {
+  background: #e0f2fe;
+  padding: 1em;
+  margin-top: 1em;
+  border-left: 4px solid #0284c7;
+}
+
 footer {
   background: #e2e8f0;
   text-align: center;
