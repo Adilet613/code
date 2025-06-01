@@ -3,33 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>C++ Академия</title>
+  <title>Изучение C++ — Геймифицированный курс</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>C++ Академия</h1>
-    <p>Выбери свой уровень и начинай путь к IOI!</p>
+    <h1>🎮 Изучай C++ как игру!</h1>
   </header>
+  <main>
+    <section id="level-select">
+      <h2>Выбери свой уровень:</h2>
+      <div class="buttons">
+        <button onclick="selectLevel('beginner')">Новичок</button>
+        <button onclick="selectLevel('intermediate')">Средний</button>
+        <button onclick="selectLevel('advanced')">Продвинутый</button>
+      </div>
+    </section>
+    <section id="topic-list"></section>
 
-  <section id="level-select">
-    <h2>🚦 Выбери уровень:</h2>
-    <div class="buttons">
-      <button onclick="selectLevel('beginner')">Новичок</button>
-      <button onclick="selectLevel('intermediate')">Средний</button>
-      <button onclick="selectLevel('advanced')">Продвинутый</button>
+    <div class="topic-block">
+      <h3>🏗 Протестируй код</h3>
+      <textarea id="code-editor" rows="8" placeholder="#include <iostream>
+using namespace std;
+int main() {
+  cout << \"Hello\";
+  return 0;
+}"></textarea>
+      <br>
+      <button id="run-code">▶️ Запустить код</button>
+      <div id="output" class="output-block"></div>
     </div>
-  </section>
-
-  <section id="topic-list">
-    <!-- Темы подгружаются через JS -->
-  </section>
+  </main>
 
   <footer>
-    <p>Создано для обучения. © GitHub Academy</p>
+    <p>💻 Создано с любовью для изучающих программирование</p>
   </footer>
 
   <script src="data.js"></script>
   <script src="script.js"></script>
+  <script src="runner.js"></script>
 </body>
 </html>
